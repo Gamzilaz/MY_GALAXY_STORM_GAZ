@@ -1,1220 +1,1138 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="ru">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Space Battle - Galactic Boss Fight</title>
+    <title>Космическая Сага</title>
     <style>
-        /* Основные стили */
-        body {
+        * {
             margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
             overflow: hidden;
             background: #000;
-            cursor: crosshair;
-            user-select: none;
+            font-family: Arial, sans-serif;
         }
 
-        .game-container {
-            width: 100vw;
-            height: 100vh;
-            position: relative;
-            background: linear-gradient(to bottom, #000 40%, #000a2c 100%);
-            overflow: hidden;
+        #gameCanvas {
+            display: block;
         }
 
-        /* Звезды */
-        .star {
-            position: absolute;
-            background: #fff;
-            border-radius: 50%;
-            animation: twinkle 1.5s infinite alternate;
-        }
-
-        .star.small { width: 1px; height: 1px; }
-        .star.medium { width: 2px; height: 2px; }
-        .star.large { width: 3px; height: 3px; }
-
-        @keyframes twinkle {
-            0% { opacity: 0.3; }
-            50% { opacity: 0.7; }
-            100% { opacity: 1; }
-        }
-
-        /* HUD */
-        .hud {
+        #gameUI {
             position: fixed;
-            color: #fff;
-            font-family: 'Courier New', monospace;
-            font-size: 20px;
-            padding: 20px;
-            text-shadow: 0 0 10px #00ffff;
-            z-index: 100;
-        }
-
-        .score { right: 20px; top: 20px; }
-        .lives { left: 20px; top: 20px; }
-        .missiles { left: 20px; bottom: 20px; }
-        .level { right: 20px; bottom: 20px; }
-
-        /* Шкалы здоровья */
-        .health-bar {
-            position: fixed;
-            height: 10px;
-            background: #333;
-            border: 2px solid #ff0000;
-            z-index: 100;
-        }
-
-        .health-bar .bar {
-            height: 100%;
-            background: linear-gradient(to right, #ff0000, #ff4444);
-            transition: width 0.3s;
-        }
-
-        .player-health {
-            top: 60px;
-            left: 20px;
-            width: 200px;
-        }
-
-        .boss-health {
             top: 20px;
-            left: 50%;
-            transform: translateX(-50%);
-            width: 300px;
-            display: none;
+            left: 20px;
+            color: #0ff;
+            font-size: 20px;
+            text-shadow: 0 0 5px #0ff;
+            pointer-events: none;
         }
 
-        /* Корабли */
-        .ship {
-            position: absolute;
-            background-size: contain;
-            background-repeat: no-repeat;
-            z-index: 90;
+        .stats {
+            margin: 10px 0;
+            display: flex;
+            align-items: center;
+            gap: 10px;
         }
 
-        .player {
-            width: 64px;
-            height: 64px;
-            background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64"><path d="M32 0L64 32H0z" fill="%234488ff"/></svg>');
-            bottom: 40px;
-            left: 50%;
-            transform: translateX(-50%);
-        }
-
-        .enemy {
-            width: 48px;
-            height: 48px;
-            background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48"><circle cx="24" cy="24" r="24" fill="%23ff4444"/></svg>');
-        }
-
-        .boss {
-            width: 300px;
-            height: 200px;
-            background-color: #880000;
-            top: -200px;
-            left: 50%;
-            transform: translateX(-50%);
-            display: none;
-            z-index: 85;
-            transition: top 2s ease-out;
-        }
-
-        /* Лазеры и ракеты */
-        .laser, .missile {
-            position: absolute;
-            z-index: 80;
-        }
-
-        .laser {
-            width: 3px;
-            height: 12px;
-            background: #00ffff;
-            border-radius: 1px;
-            box-shadow: 0 0 10px #00ffff;
-        }
-
-        .missile {
-            width: 6px;
-            height: 16px;
-            background: linear-gradient(to bottom, #ff4400, #ff8800);
-            border-radius: 2px;
-            box-shadow: 0 0 10px #ff4400;
-        }
-
-        /* Взрывы */
-        .explosion {
-            position: absolute;
-            width: 48px;
-            height: 48px;
-            background: radial-gradient(circle, #ff8800, #ff0000);
-            border-radius: 50%;
-            animation: explode 0.5s forwards;
-            z-index: 95;
-        }
-
-        @keyframes explode {
-            0% { transform: scale(0.8); opacity: 1; }
-            50% { transform: scale(1.2); opacity: 0.7; }
-            100% { transform: scale(1.5); opacity: 0; }
-        }
-
-        /* Частицы взрыва */
-        .particle {
-            position: absolute;
-            width: 4px;
-            height: 4px;
-            background: #ff4400;
-            border-radius: 50%;
-            transition: transform 1s;
-            z-index: 96;
-        }
-
-        /* Кнопка рестарта */
-        .restart-button {
+        #weaponSelect {
             position: fixed;
-            top: 50%;
+            bottom: 20px;
             left: 50%;
-            transform: translate(-50%, -50%);
-            padding: 10px 20px;
-            background: #ff4400;
-            color: white;
-            border: none;
+            transform: translateX(-50%);
+            display: flex;
+            gap: 10px;
+            background: rgba(0, 0, 0, 0.7);
+            padding: 10px;
+            border-radius: 10px;
+            border: 1px solid #0ff;
+        }
+
+        .weapon {
+            width: 50px;
+            height: 50px;
+            border: 2px solid #0ff;
             border-radius: 5px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
             cursor: pointer;
-            font-family: 'Courier New', monospace;
-            font-size: 16px;
-            box-shadow: 0 0 10px #ff4400;
-            z-index: 1000;
+            transition: 0.3s;
+        }
+
+        .weapon.active {
+            background: rgba(0, 255, 255, 0.2);
+            box-shadow: 0 0 10px #0ff;
+        }
+
+        #gameOver {
             display: none;
-        }
-
-        .restart-button:hover {
-            background: #ff6600;
-            box-shadow: 0 0 20px #ff6600;
-        }
-
-        .level-message {
             position: fixed;
             top: 50%;
             left: 50%;
             transform: translate(-50%, -50%);
+            color: #f00;
             font-size: 48px;
-            color: #fff;
-            text-shadow: 0 0 20px #00ffff;
-            animation: levelMessage 2s ease-out forwards;
-            z-index: 1000;
+            text-align: center;
+            text-shadow: 0 0 20px #f00;
+            animation: pulse 2s infinite;
         }
 
-        @keyframes levelMessage {
-            0% { opacity: 0; transform: translate(-50%, -50%) scale(0.5); }
-            50% { opacity: 1; transform: translate(-50%, -50%) scale(1.2); }
-            100% { opacity: 0; transform: translate(-50%, -50%) scale(1.5); }
-        }
-
-        .boss-gun {
-            position: absolute;
-            width: 30px;
-            height: 30px;
-            background: #ff0000;
-            border-radius: 50%;
-            transition: opacity 0.3s;
+        @keyframes pu lse {
+            0% { transform: translate(-50%, -50%) scale(1); }
+            50% { transform: translate(-50%, -50%) scale(1.1); }
+            100% { transform: translate(-50%, -50%) scale(1); }
         }
     </style>
 </head>
 <body>
-    <div class="game-container" id="gameContainer">
-        <div class="health-bar player-health" id="playerHealth">
-            <div class="bar" id="playerHealthBar"></div>
-        </div>
-        <div class="health-bar boss-health" id="bossHealth">
-            <div class="bar" id="bossHealthBar"></div>
-        </div>
-        <div class="hud score" id="score">SCORE: 0</div>
-        <div class="hud lives" id="lives">LIVES: 3</div>
-        <div class="hud missiles" id="missiles">MISSILES: 10</div>
-        <div class="hud level" id="level">LEVEL: 1</div>
-        <div class="ship player" id="player"></div>
-        <div class="ship boss" id="boss"></div>
-        <button class="restart-button" id="restartButton">RESTART GAME</button>
+    <canvas id="gameCanvas"></canvas>
+    <div id="gameUI">
+        <div class="stats" id="score">Очки: 0</div>
+        <div class="stats" id="level">Уровень: 1</div>
+        <div class="stats" id="lives">Жизни: 3</div>
+        <div class="stats" id="missiles">Ракеты: 5</div>
+    </div>
+    <div id="weaponSelect">
+        <div class="weapon active" data-weapon="laser">L</div>
+        <div class="weapon" data-weapon="missile">M</div>
+        <div class="weapon" data-weapon="plasma">P</div>
+    </div>
+    <div id="gameOver">
+        ИГРА ОКОНЧЕНА
+        <br>
+        <span style="font-size: 24px">Нажмите ПРОБЕЛ для перезапуска</span>
     </div>
 
-    <!-- Звуки -->
-<audio id="laserSound" preload="auto">
-    <source src="https://www.soundjay.com/mechanical/sounds/laser-gun-19.mp3" type="audio/mpeg">
-</audio>
-<audio id="explosionSound" preload="auto">
-    <source src="https://www.soundjay.com/mechanical/sounds/explosion-01.mp3" type="audio/mpeg">
-</audio>
-<audio id="hitSound" preload="auto">
-    <source src="https://www.soundjay.com/button/sounds/button-09.mp3" type="audio/mpeg">
-</audio>
-<audio id="levelUpSound" preload="auto">
-    <source src="https://www.soundjay.com/misc/sounds/bell-ringing-05.mp3" type="audio/mpeg">
-</audio>
-  <script>
-    
-        // Константы игры
-const ENEMY_SPEED = 2;
-const LASER_SPEED = 10;
-const MISSILE_SPEED = 6;
-const MISSILE_TURN_SPEED = 0.1;
-const MAX_MISSILES = 10;
-const PLAYER_HEALTH = 100;
-const KILLS_FOR_BOSS = 15;
-const METEOR_SPEED = 3;
-const METEOR_SPAWN_INTERVAL = 3000;
-const ENEMY_WANDER_SPEED = 1;
-const ENEMY_BULLET_SPEED = 5;
-const ENEMY_FIRE_RATE = 1500;
-const METEOR_DAMAGE = 20;
-const ENEMY_BULLET_DAMAGE = 10;
-
-// Типы боссов
-const BOSS_TYPES = {
-    BASIC: {
-        health: 500,
-        guns: 3,
-        moveSpeed: 2,
-        fireRate: 0.03,
-        color: '#880000',
-        pattern: 'linear'
-    },
-    CIRCLE: {
-        health: 800,
-        guns: 4,
-        moveSpeed: 3,
-        fireRate: 0.04,
-        color: '#884400',
-        pattern: 'circle'
-    },
-    ZIGZAG: {
-        health: 1200,
-        guns: 5,
-        moveSpeed: 4,
-        fireRate: 0.05,
-        color: '#886600',
-        pattern: 'zigzag'
-    },
-    CHASE: {
-        health: 2000,
-        guns: 6,
-        moveSpeed: 5,
-        fireRate: 0.06,
-        color: '#888800',
-        pattern: 'chase'
+<script>
+// Конфигурация игры
+const GAME_CONFIG = {
+    FPS: 60,
+    PLAYER_SPEED: 0.1,
+    BULLET_SPEED: 15,
+    MISSILE_SPEED: 4,
+    MISSILE_TURN_SPEED: 0.5,
+    PLASMA_COOLDOWN: 45,
+    ENEMY_SPAWN_RATE: 0.007,
+    STARS_COUNT: 50,
+    PLAYER_MAX_HEALTH: 3000,
+    BOSS_SCORE_THRESHOLD: 300,
+    LEVEL_BOSS_HEALTH: 30,
+    POWER_UP_CHANCE: 0.5,
+    SHIELD_DURATION: 300,
+    WEAPON_TYPES: {
+        LASER: 'laser',
+        MISSILE: 'missile',
+        PLASMA: 'plasma'
     }
 };
 
-const METEOR_SIZES = {
-    LARGE: { width: 48, score: 50 },
-    MEDIUM: { width: 24, score: 75 },
-    SMALL: { width: 12, score: 100 }
-};
+// Инициализация канваса
+const canvas = document.getElementById('gameCanvas');
+const ctx = canvas.getContext('2d');
 
-// Состояние игры
-let score = 0;
-let lives = 3;
-let missiles = MAX_MISSILES;
-let isGameOver = false;
-let bossActive = false;
-let bossHealth = 500;
-let playerHealth = PLAYER_HEALTH;
-let kills = 0;
-let level = 1;
-let enemies = [];
-let meteors = [];
-let bossGuns = [];
+function resizeCanvas() {
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
+}
 
-// Элементы DOM
-const gameContainer = document.getElementById('gameContainer');
-const player = document.getElementById('player');
-const boss = document.getElementById('boss');
-const scoreElement = document.getElementById('score');
-const livesElement = document.getElementById('lives');
-const missilesElement = document.getElementById('missiles');
-const levelElement = document.getElementById('level');
-const playerHealthBar = document.getElementById('playerHealthBar');
-const bossHealthBar = document.getElementById('bossHealthBar');
-const bossHealthContainer = document.getElementById('bossHealth');
-const restartButton = document.getElementById('restartButton');
-
-// Воспроизведение звуков
-function playSound(soundId) {
-    const sound = document.getElementById(soundId);
-    if (sound) {
-        sound.currentTime = 0;
-        sound.play().catch(error => console.log('Error playing sound:', error));
+window.addEventListener('resize', resizeCanvas);
+resizeCanvas();
+  // Класс для управления частицами и эффектами
+class ParticleSystem {
+    constructor() {
+        this.particles = [];
+        this.effects = [];
     }
-}
 
-// Инициализация игры
-function initGame() {
-    setupControls();
-    createStars();
-    spawnEnemies();
-    spawnMeteors();
-    updatePlayerHealth();
-}
-
-// Управление
-function setupControls() {
-    document.addEventListener('mousemove', (e) => {
-        if (isGameOver) return;
-        const x = Math.max(32, Math.min(e.clientX, gameContainer.offsetWidth - 32));
-        player.style.left = `${x - 32}px`;
-    });
-
-    document.addEventListener('mousedown', (e) => {
-        if (isGameOver) return;
-        const rect = player.getBoundingClientRect();
-        const x = rect.left + rect.width / 2;
-        const y = rect.top;
-
-        if (e.button === 0) {
-            fireLaser(x, y);
-        } else if (e.button === 2 && missiles > 0) {
-            fireMissile(x, y);
-            missiles--;
-            missilesElement.textContent = `MISSILES: ${missiles}`;
-        }
-    });
-
-    document.addEventListener('contextmenu', e => e.preventDefault());
-}
-
-// Создание звезд
-function createStars() {
-    for (let i = 0; i < 150; i++) {
-        const star = document.createElement('div');
-        const size = Math.random();
-        star.className = `star ${
-            size < 0.6 ? 'small' : 
-            size < 0.9 ? 'medium' : 
-            'large'
-        }`;
-        star.style.left = `${Math.random() * 100}%`;
-        star.style.top = `${Math.random() * 100}%`;
-        star.style.animationDelay = `${Math.random() * 1.5}s`;
-        gameContainer.appendChild(star);
-
-        const speed = Math.random() * 0.5 + 0.2;
-        setInterval(() => {
-            const currentTop = parseFloat(star.style.top);
-            star.style.top = `${currentTop + speed}%`;
-            if (currentTop > 100) {
-                star.style.top = '-10%';
-            }
-        }, 50);
-    }
-}
-
-// Создание врага
-function createEnemy() {
-    const enemy = document.createElement('div');
-    enemy.className = 'ship enemy';
-    enemy.style.left = `${Math.random() * (gameContainer.offsetWidth - 48)}px`;
-    enemy.style.top = '-48px';
-    
-    // Увеличиваем размер врагов с уровнем
-    const size = 48 + (level - 1) * 2;
-    enemy.style.width = `${size}px`;
-    enemy.style.height = `${size}px`;
-    
-    // Добавляем здоровье врагам на высоких уровнях
-    enemy.health = Math.min(1 + Math.floor((level - 1) / 2), 3);
-    
-    // Меняем цвет врагов в зависимости от здоровья
-    enemy.style.backgroundColor = enemy.health === 1 ? '#ff0000' : 
-                                enemy.health === 2 ? '#ff6600' : '#ff9900';
-    
-    gameContainer.appendChild(enemy);
-    enemies.push(enemy);
-
-    let wanderAngle = Math.random() * Math.PI * 2;
-    
-    // Частота стрельбы зависит от уровня
-    const currentFireRate = ENEMY_FIRE_RATE / (1 + (level - 1) * 0.2);
-    
-    // Добавляем стрельбу для врага
-    const shootInterval = setInterval(() => {
-        if (enemy.isConnected && !isGameOver) {
-            const enemyRect = enemy.getBoundingClientRect();
-            // На высоких уровнях враги могут стрелять несколькими пулями
-            if (level >= 3) {
-                const bulletCount = Math.min(Math.floor(level / 3), 3);
-                for (let i = 0; i < bulletCount; i++) {
-                    const angle = -Math.PI/2 + (Math.random() - 0.5) * Math.PI/4;
-                    enemyFire(enemyRect.left + enemyRect.width/2, enemyRect.bottom, angle);
-                }
-            } else {
-                enemyFire(enemyRect.left + enemyRect.width/2, enemyRect.bottom, -Math.PI/2);
-            }
-        }
-    }, currentFireRate);
-    
-    const moveInterval = setInterval(() => {
-        if (!enemy.isConnected || isGameOver) {
-            clearInterval(moveInterval);
-            clearInterval(shootInterval);
-            return;
-        }
-
-        const rect = enemy.getBoundingClientRect();
-        
-        // Увеличиваем случайность движения с уровнем
-        wanderAngle += (Math.random() - 0.5) * 0.2 * (1 + (level - 1) * 0.1);
-        const vx = Math.cos(wanderAngle) * ENEMY_WANDER_SPEED * (1 + (level - 1) * 0.1);
-        const vy = Math.sin(wanderAngle) * ENEMY_WANDER_SPEED * (1 + (level - 1) * 0.1);
-        
-        let newLeft = rect.left + vx;
-        let newTop = rect.top + vy + ENEMY_SPEED * (1 + (level - 1) * 0.1);
-
-        if (newLeft < 0 || newLeft > gameContainer.offsetWidth - rect.width) {
-            wanderAngle = Math.PI - wanderAngle;
-            newLeft = rect.left;
-        }
-
-        enemy.style.left = `${newLeft}px`;
-        enemy.style.top = `${newTop}px`;
-
-        if (newTop > gameContainer.offsetHeight) {
-            enemy.remove();
-        }
-
-        // Проверяем столкновение с игроком
-        const playerRect = player.getBoundingClientRect();
-        if (isCollision(rect, playerRect)) {
-            playerHit(10 * enemy.health); // Урон зависит от здоровья врага
-            enemy.remove();
-        }
-    }, 16);
-}
-// Обновляем функцию enemyFire для поддержки направления стрельбы
-function enemyFire(x, y, angle = -Math.PI/2) {
-    const bullet = document.createElement('div');
-    bullet.className = 'enemy-bullet';
-    bullet.style.position = 'absolute';
-    bullet.style.width = '4px';
-    bullet.style.height = '8px';
-    bullet.style.backgroundColor = '#ff0000';
-    bullet.style.left = `${x - 2}px`;
-    bullet.style.top = `${y}px`;
-    
-    // Добавляем вращение пули в соответствии с углом
-    bullet.style.transform = `rotate(${angle + Math.PI/2}rad)`;
-    
-    gameContainer.appendChild(bullet);
-
-    const bulletSpeed = ENEMY_BULLET_SPEED * (1 + (level - 1) * 0.1);
-    
-    const interval = setInterval(() => {
-        const currentLeft = parseFloat(bullet.style.left);
-        const currentTop = parseFloat(bullet.style.top);
-        
-        // Движение пули с учетом угла
-        const vx = Math.cos(angle) * bulletSpeed;
-        const vy = Math.sin(angle) * bulletSpeed;
-        
-        bullet.style.left = `${currentLeft + vx}px`;
-        bullet.style.top = `${currentTop + vy}px`;
-
-        if (currentTop > gameContainer.offsetHeight || currentTop < 0 ||
-            currentLeft < 0 || currentLeft > gameContainer.offsetWidth) {
-            clearInterval(interval);
-            bullet.remove();
-        } else {
-            const bulletRect = bullet.getBoundingClientRect();
-            const playerRect = player.getBoundingClientRect();
-            if (isCollision(bulletRect, playerRect)) {
-                playerHit(ENEMY_BULLET_DAMAGE);
-                clearInterval(interval);
-                bullet.remove();
-            }
-        }
-    }, 16);
-}
-
-// Стрельба врагов
-function enemyFire(x, y) {
-    const bullet = document.createElement('div');
-    bullet.className = 'enemy-bullet';
-    bullet.style.position = 'absolute';
-    bullet.style.width = '4px';
-    bullet.style.height = '8px';
-    bullet.style.backgroundColor = '#ff0000';
-    bullet.style.left = `${x - 2}px`;
-    bullet.style.top = `${y}px`;
-    gameContainer.appendChild(bullet);
-
-    const interval = setInterval(() => {
-        const currentTop = parseInt(bullet.style.top);
-        bullet.style.top = `${currentTop + ENEMY_BULLET_SPEED}px`;
-
-        if (currentTop > gameContainer.offsetHeight) {
-            clearInterval(interval);
-            bullet.remove();
-        } else {
-            const bulletRect = bullet.getBoundingClientRect();
-            const playerRect = player.getBoundingClientRect();
-            if (isCollision(bulletRect, playerRect)) {
-                playerHit(ENEMY_BULLET_DAMAGE);
-                clearInterval(interval);
-                bullet.remove();
-            }
-        }
-    }, 16);
-}
-
-// Спавн врагов
-function spawnEnemies() {
-    if (!isGameOver && !bossActive) {
-        createEnemy();
-        setTimeout(spawnEnemies, Math.max(500, 2000 - Math.floor(score / 1000) * 100));
-    }
-}
-
-// Создание метеорита
-function createMeteor(size = 'LARGE', position = null) {
-    const meteor = document.createElement('div');
-    meteor.className = 'ship meteor';
-    meteor.setAttribute('data-size', size);
-    
-    const meteorSize = METEOR_SIZES[size];
-    meteor.style.width = `${meteorSize.width}px`;
-    meteor.style.height = `${meteorSize.width}px`;
-    meteor.style.background = 'linear-gradient(45deg, #444444, #666666)';
-    meteor.style.borderRadius = '50%';
-    
-    if (position) {
-        meteor.style.left = position.left;
-        meteor.style.top = position.top;
-    } else {
-        meteor.style.left = `${Math.random() * (gameContainer.offsetWidth - meteorSize.width)}px`;
-        meteor.style.top = `-${meteorSize.width}px`;
-    }
-    
-    gameContainer.appendChild(meteor);
-    meteors.push(meteor);
-
-    const angle = (Math.random() - 0.5) * Math.PI * 0.5;
-    const moveInterval = setInterval(() => {
-        if (!meteor.isConnected || isGameOver) {
-            clearInterval(moveInterval);
-            return;
-        }
-
-        const rect = meteor.getBoundingClientRect();
-        const vx = Math.sin(angle) * METEOR_SPEED;
-        const vy = Math.cos(angle) * METEOR_SPEED;
-
-        meteor.style.left = `${rect.left + vx}px`;
-        meteor.style.top = `${rect.top + vy}px`;
-
-        // Проверяем столкновение с игроком
-        const playerRect = player.getBoundingClientRect();
-        if (isCollision(rect, playerRect)) {
-            playerHit(METEOR_DAMAGE);
-            createExplosion(meteor);
-            meteor.remove();
-        }
-
-        if (rect.top > gameContainer.offsetHeight) {
-            meteor.remove();
-        }
-    }, 16);
-}
-
-// Спавн метеоритов
-function spawnMeteors() {
-    if (!isGameOver) {
-        createMeteor();
-        setTimeout(spawnMeteors, METEOR_SPAWN_INTERVAL);
-    }
-}
-// Уничтожение метеорита
-function meteorHit(meteor) {
-    const size = meteor.getAttribute('data-size');
-    score += METEOR_SIZES[size].score;
-    scoreElement.textContent = `SCORE: ${score}`;
-    createExplosion(meteor);
-    splitMeteor(meteor); // Вызываем splitMeteor до удаления метеорита
-    meteor.remove();
-}
-// Разделение метеорита
-function splitMeteor(meteor) {
-    const currentSize = meteor.getAttribute('data-size');
-    if (currentSize === 'LARGE') {
-        const rect = meteor.getBoundingClientRect();
-        for (let i = 0; i < 3; i++) {
-            createMeteor('MEDIUM', {
-                left: `${rect.left}px`,
-                top: `${rect.top}px`
-            });
-        }
-    } else if (currentSize === 'MEDIUM') {
-        const rect = meteor.getBoundingClientRect();
-        for (let i = 0; i < 3; i++) {
-            createMeteor('SMALL', {
-                left: `${rect.left}px`,
-                top: `${rect.top}px`
-            });
-        }
-    }
-    playSound('explosionSound');
-}
-
-// Выстрел лазером
-function fireLaser(x, y) {
-    playSound('laserSound');
-    const laser = document.createElement('div');
-    laser.className = 'laser';
-    laser.style.left = `${x - 1.5}px`;
-    laser.style.top = `${y}px`;
-    gameContainer.appendChild(laser);
-
-    const interval = setInterval(() => {
-        const currentTop = parseInt(laser.style.top);
-        if (currentTop <= 0) {
-            clearInterval(interval);
-            laser.remove();
-        } else {
-            laser.style.top = `${currentTop - LASER_SPEED}px`;
-            if (checkHits(laser)) {
-                clearInterval(interval);
-                laser.remove();
-            }
-        }
-    }, 16);
-}
-
-// Выстрел ракетой
-function fireMissile(x, y) {
-    playSound('laserSound');
-    const missile = document.createElement('div');
-    missile.className = 'missile';
-    missile.style.left = `${x - 3}px`;
-    missile.style.top = `${y}px`;
-    gameContainer.appendChild(missile);
-
-    let angle = -Math.PI/2;
-    const interval = setInterval(() => {
-        let target = null;
-        let minDist = Infinity;
-
-        enemies.forEach(enemy => {
-            if (enemy.isConnected) {
-                const enemyRect = enemy.getBoundingClientRect();
-                const missileRect = missile.getBoundingClientRect();
-                const dist = Math.hypot(
-                    enemyRect.left - missileRect.left,
-                    enemyRect.top - missileRect.top
-                );
-                if (dist < minDist) {
-                    minDist = dist;
-                    target = enemyRect;
-                }
-            }
-        });
-
-        if (target) {
-            const missileRect = missile.getBoundingClientRect();
-            const targetAngle = Math.atan2(
-                target.top - missileRect.top,
-                target.left - missileRect.left
-            );
+    createExplosion(x, y, color, size = 500) {
+        for (let i = 0; i < size; i++) {
+            const angle = (Math.PI * 2 / size) * i;
+            const speed = 1 + Math.random() * 5;
+            const lifespan = 2 + Math.random();
             
-            const angleDiff = targetAngle - angle;
-            angle += Math.sign(angleDiff) * 
-                    Math.min(Math.abs(angleDiff), MISSILE_TURN_SPEED);
+            this.particles.push({
+                x: x,
+                y: y,
+                vx: Math.cos(angle) * speed,
+                vy: Math.sin(angle) * speed,
+                color: color,
+                life: lifespan,
+                maxLife: lifespan,
+                size: 2 + Math.random() * 5
+            });
         }
 
-        const vx = Math.cos(angle) * MISSILE_SPEED;
-        const vy = Math.sin(angle) * MISSILE_SPEED;
+        // Добавляем световой эффект
+        this.effects.push({
+            x: x,
+            y: y,
+            radius: 100,
+            color: color,
+            life: 1,
+            type: 'glow'
+        });
+    }
+
+    update() {
+        // Обновление частиц
+        for (let i = this.particles.length - 1; i >= 0; i--) {
+            const p = this.particles[i];
+            p.x += p.vx;
+            p.y += p.vy;
+            p.vx *= 0.98;
+            p.vy *= 0.98;
+            p.life -= 0.016;
+            
+            if (p.life <= 0) {
+                this.particles.splice(i, 1);
+            }
+        }
+
+        // Обновление эффектов
+        for (let i = this.effects.length - 1; i >= 0; i--) {
+            const effect = this.effects[i];
+            effect.life -= 0.02;
+            
+            if (effect.type === 'glow') {
+                effect.radius *= 1;
+            }
+            
+            if (effect.life <= 0) {
+                this.effects.splice(i, 1);
+            }
+        }
+    }
+
+    draw(ctx) {
+        ctx.save();
         
-        const currentLeft = parseInt(missile.style.left);
-        const currentTop = parseInt(missile.style.top);
+        // Отрисовка частиц
+        for (const p of this.particles) {
+            ctx.globalAlpha = p.life / p.maxLife;
+            ctx.fillStyle = p.color;
+            ctx.beginPath();
+            ctx.arc(p.x, p.y, p.size, 1, Math.PI * 2);
+            ctx.fill();
+        }
+
+        // Отрисовка эффектов
+        for (const effect of this.effects) {
+            ctx.globalAlpha = effect.life;
+            if (effect.type === 'glow') {
+                const gradient = ctx.createRadialGradient(
+                    effect.x, effect.y, 0,
+                    effect.x, effect.y, effect.radius
+                );
+                gradient.addColorStop(0, effect.color);
+                gradient.addColorStop(1, 'transparent');
+                ctx.fillStyle = gradient;
+                ctx.fillRect(
+                    effect.x - effect.radius,
+                    effect.y - effect.radius,
+                    effect.radius * 2,
+                    effect.radius * 2
+                );
+            }
+        }
         
-        missile.style.left = `${currentLeft + vx}px`;
-        missile.style.top = `${currentTop + vy}px`;
-        missile.style.transform = `rotate(${angle + Math.PI/2}rad)`;
-
-        if (checkHits(missile)) {
-            clearInterval(interval);
-            missile.remove();
-        }
-
-        if (currentTop < 0 || currentTop > gameContainer.offsetHeight ||
-            currentLeft < 0 || currentLeft > gameContainer.offsetWidth) {
-            clearInterval(interval);
-            missile.remove();
-        }
-    }, 16);
+        ctx.restore();
+    }
 }
 
-// Движение босса
-function updateBossPosition(boss, bossConfig) {
-    let time = 0;
-    let centerX = gameContainer.offsetWidth / 2 - boss.offsetWidth / 2;
-    
-    const moveInterval = setInterval(() => {
-        if (!boss.isConnected || isGameOver) {
-            clearInterval(moveInterval);
-            return;
+// Класс для создания звёздного фона
+class StarField {
+    constructor() {
+        this.stars = [];
+        this.initStars();
+    }
+
+    initStars() {
+        for (let i = 0; i < GAME_CONFIG.STARS_COUNT; i++) {
+            this.stars.push({
+                x: Math.random() * canvas.width,
+                y: Math.random() * canvas.height,
+                size: Math.random() * 1 + 1,
+                speed: Math.random() * 1 + 1,
+                brightness: Math.random()
+            });
+        }
+    }
+
+    update() {
+        for (const star of this.stars) {
+            star.y += star.speed;
+            star.brightness = Math.sin(Date.now() * 0.001 * star.speed) * 0.5 + 0.5;
+            
+            if (star.y > canvas.height) {
+                star.y = 0;
+                star.x = Math.random() * canvas.width;
+            }
+        }
+    }
+
+    draw(ctx) {
+        ctx.save();
+        for (const star of this.stars) {
+            ctx.fillStyle = `rgba(255, 255, 255, ${star.brightness})`;
+            ctx.beginPath();
+            ctx.arc(star.x, star.y, star.size, 0, Math.PI * 2);
+            ctx.fill();
+
+            if (star.size > 1.5) {
+                ctx.globalAlpha = 0.5 * star.brightness;
+                ctx.shadowColor = '#fff';
+                ctx.shadowBlur = 10;
+                ctx.beginPath();
+                ctx.arc(star.x, star.y, star.size * 2, 0, Math.PI * 2);
+                ctx.fill();
+            }
+        }
+        ctx.restore();
+    }
+}
+
+// Класс для оружия
+class Weapon {
+    constructor(type, damage, cooldown, color) {
+        this.type = type;
+        this.damage = damage;
+        this.cooldown = cooldown;
+        this.currentCooldown = 0;
+        this.color = color;
+    }
+
+    update() {
+        if (this.currentCooldown > 0) {
+            this.currentCooldown--;
+        }
+    }
+
+    canFire() {
+        return this.currentCooldown <= 0;
+    }
+
+    fire(x, y, target = null) {
+        if (!this.canFire()) return null;
+
+        this.currentCooldown = this.cooldown;
+        
+        switch(this.type) {
+            case GAME_CONFIG.WEAPON_TYPES.LASER:
+                return new Laser(x, y, this.damage, this.color);
+            case GAME_CONFIG.WEAPON_TYPES.MISSILE:
+                return new Missile(x, y, target, this.damage, this.color);
+            case GAME_CONFIG.WEAPON_TYPES.PLASMA:
+                return new Plasma(x, y, this.damage, this.color);
+        }
+    }
+}
+
+// Базовый класс для снарядов
+class Projectile {
+    constructor(x, y, damage, color) {
+        this.x = x;
+        this.y = y;
+        this.damage = damage;
+        this.color = color;
+        this.active = true;
+    }
+
+    update() {
+        return this.active;
+    }
+
+    draw(ctx) {}
+}
+  // Класс лазерного выстрела
+class Laser extends Projectile {
+    constructor(x, y, damage, color) {
+        super(x, y, damage, color);
+        this.width = 4;
+        this.height = 15;
+        this.speed = GAME_CONFIG.BULLET_SPEED;
+    }
+
+    update() {
+        this.y -= this.speed;
+        return this.y > -this.height;
+    }
+
+    draw(ctx) {
+        ctx.save();
+        ctx.fillStyle = this.color;
+        ctx.shadowColor = this.color;
+        ctx.shadowBlur = 10;
+        ctx.fillRect(this.x - this.width/2, this.y, this.width, this.height);
+        
+        // Добавляем эффект свечения
+        ctx.globalAlpha = 0.5;
+        ctx.fillRect(this.x - this.width, this.y, this.width * 2, this.height);
+        ctx.restore();
+    }
+}
+
+// Класс самонаводящейся ракеты
+class Missile extends Projectile {
+    constructor(x, y, target, damage, color) {
+        super(x, y, damage, color);
+        this.target = target;
+        this.width = 8;
+        this.height = 20;
+        this.speed = GAME_CONFIG.MISSILE_SPEED;
+        this.angle = -Math.PI / 2; // Начальный угол (вверх)
+        this.turnSpeed = GAME_CONFIG.MISSILE_TURN_SPEED;
+        this.smoke = [];
+    }
+
+    update() {
+        if (this.target && this.target.active) {
+            // Вычисляем угол до цели
+            const dx = this.target.x - this.x;
+            const dy = this.target.y - this.y;
+            const targetAngle = Math.atan2(dy, dx);
+            
+            // Плавный поворот к цели
+            let angleDiff = targetAngle - this.angle;
+            if (angleDiff > Math.PI) angleDiff -= Math.PI * 2;
+            if (angleDiff < -Math.PI) angleDiff += Math.PI * 2;
+            
+            this.angle += Math.sign(angleDiff) * Math.min(Math.abs(angleDiff), this.turnSpeed);
         }
 
-        time += 0.016; // 16ms в секундах
-        let newX = centerX;
-        let newY = 50;
+        // Движение ракеты
+        this.x += Math.cos(this.angle) * this.speed;
+        this.y += Math.sin(this.angle) * this.speed;
 
-        switch (bossConfig.pattern) {
-            case 'circle':
-                newX = centerX + Math.sin(time) * 200;
-                newY = 50 + Math.cos(time) * 100;
+        // Создание дымового следа
+        if (Math.random() < 0.3) {
+            this.smoke.push({
+                x: this.x,
+                y: this.y,
+                size: 3,
+                life: 1
+            });
+        }
+
+        // Обновление дымового следа
+        for (let i = this.smoke.length - 1; i >= 0; i--) {
+            const particle = this.smoke[i];
+            particle.size *= 0.95;
+            particle.life -= 0.05;
+            if (particle.life <= 0) this.smoke.splice(i, 1);
+        }
+
+        return this.y > 0 && this.y < canvas.height && this.x > 0 && this.x < canvas.width;
+    }
+
+    draw(ctx) {
+        // Отрисовка дымового следа
+        ctx.save();
+        for (const particle of this.smoke) {
+            ctx.globalAlpha = particle.life;
+            ctx.fillStyle = '#888';
+            ctx.beginPath();
+            ctx.arc(particle.x, particle.y, particle.size, 0, Math.PI * 2);
+            ctx.fill();
+        }
+
+        // Отрисовка ракеты
+        ctx.translate(this.x, this.y);
+        ctx.rotate(this.angle);
+        
+        // Корпус ракеты
+        ctx.fillStyle = this.color;
+        ctx.fillRect(-this.width/2, -this.height/2, this.width, this.height);
+        
+        // Стабилизаторы
+        ctx.fillStyle = '#ff8800';
+        ctx.beginPath();
+        ctx.moveTo(-this.width/2, this.height/2);
+        ctx.lineTo(-this.width, this.height/2);
+        ctx.lineTo(-this.width/2, this.height/4);
+        ctx.fill();
+        
+        ctx.beginPath();
+        ctx.moveTo(this.width/2, this.height/2);
+        ctx.lineTo(this.width, this.height/2);
+        ctx.lineTo(this.width/2, this.height/4);
+        ctx.fill();
+        
+        ctx.restore();
+    }
+}
+
+// Класс игрока
+class Player {
+    constructor() {
+        this.width = 50;
+        this.height = 60;
+        this.x = canvas.width / 2 - this.width / 2;
+        this.y = canvas.height - 100;
+        this.speed = GAME_CONFIG.PLAYER_SPEED;
+        this.health = 100;
+        this.shield = 0;
+        this.weapons = {
+            [GAME_CONFIG.WEAPON_TYPES.LASER]: new Weapon(GAME_CONFIG.WEAPON_TYPES.LASER, 1, 10, '#0ff'),
+            [GAME_CONFIG.WEAPON_TYPES.MISSILE]: new Weapon(GAME_CONFIG.WEAPON_TYPES.MISSILE, 3, 60, '#f00'),
+            [GAME_CONFIG.WEAPON_TYPES.PLASMA]: new Weapon(GAME_CONFIG.WEAPON_TYPES.PLASMA, 2, 30, '#f0f')
+        };
+        this.currentWeapon = GAME_CONFIG.WEAPON_TYPES.LASER;
+        this.engineParticles = [];
+    this.maxHealth = GAME_CONFIG.PLAYER_MAX_HEALTH;
+        this.health = this.maxHealth;
+        this.isInvulnerable = false;
+        this.invulnerabilityTime = 0;
+      
+    }
+
+    update() {
+        // Движение за мышью
+        if (mouse.x !== undefined) {
+            const targetX = mouse.x - this.width/2;
+            const targetY = mouse.y - this.height/2;
+            
+            this.x += (targetX - this.x) * 0.1;
+            this.y += (targetY - this.y) * 0.1;
+        }
+
+        // Ограничение движения
+        this.x = Math.max(0, Math.min(canvas.width - this.width, this.x));
+        this.y = Math.max(0, Math.min(canvas.height - this.height, this.y));
+
+        // Обновление оружия
+        Object.values(this.weapons).forEach(weapon => weapon.update());
+
+        // Создание частиц двигателя
+        if (Math.random() < 0.3) {
+            this.engineParticles.push({
+                x: this.x + this.width/2,
+                y: this.y + this.height,
+                size: 2 + Math.random() * 2,
+                speed: 1 + Math.random() * 2,
+                life: 1
+              
+            });
+        }
+
+        // Обновление частиц двигателя
+        for (let i = this.engineParticles.length - 1; i >= 0; i--) {
+            const particle = this.engineParticles[i];
+            particle.y += particle.speed;
+            particle.life -= 0.02;
+            if (particle.life <= 0) {
+                this.engineParticles.splice(i, 1);
+            }
+        }
+
+        // Обновление щита
+        if (this.shield > 0) this.shield--;
+    }
+
+    draw(ctx) {
+        ctx.save();
+
+        // Отрисовка частиц двигателя
+        for (const particle of this.engineParticles) {
+            ctx.globalAlpha = particle.life;
+            ctx.fillStyle = '#f60';
+            ctx.beginPath();
+            ctx.arc(particle.x, particle.y, particle.size, 0, Math.PI * 2);
+            ctx.fill();
+           
+        }
+
+        // Отрисовка щита
+        if (this.shield > 0) {
+            ctx.globalAlpha = this.shield / GAME_CONFIG.SHIELD_DURATION;
+            ctx.strokeStyle = '#0ff';
+            ctx.lineWidth = 2;
+            ctx.beginPath();
+            ctx.arc(
+                this.x + this.width/2,
+                this.y + this.height/2,
+                this.width * 0.8,
+                0, Math.PI * 2
+            );
+            ctx.stroke();
+        }
+
+        // Отрисовка корабля
+        ctx.translate(this.x + this.width/2, this.y + this.height/2);
+        
+        // Корпус
+        ctx.fillStyle = '#0ff';
+        ctx.beginPath();
+        ctx.moveTo(0, -this.height/2);
+        ctx.lineTo(this.width/2, this.height/2);
+        ctx.lineTo(-this.width/2, this.height/2);
+        ctx.closePath();
+        ctx.fill();
+
+        // Свечение корабля
+        ctx.shadowColor = '#0ff';
+        ctx.shadowBlur = 20;
+        ctx.fill();
+
+        ctx.restore();
+    }
+
+    fire() {
+        const weapon = this.weapons[this.currentWeapon];
+        if (weapon.canFire()) {
+            let projectile;
+            const x = this.x + this.width/2;
+            const y = this.y;
+
+            switch(this.currentWeapon) {
+                case GAME_CONFIG.WEAPON_TYPES.LASER:
+                    projectile = weapon.fire(x, y);
+                    break;
+                case GAME_CONFIG.WEAPON_TYPES.MISSILE:
+                    const target = findNearestEnemy(x, y);
+                    if (target) {
+                        projectile = weapon.fire(x, y, target);
+                    }
+                    break;
+                case GAME_CONFIG.WEAPON_TYPES.PLASMA:
+                    projectile = weapon.fire(x, y);
+                    break;
+            }
+
+            if (projectile) {
+                projectiles.push(projectile);
+                particles.createExplosion(x, y - 20, weapon.color, 5);
+            }
+        }
+    }
+}
+  // Класс базового врага
+class Enemy {
+    constructor(type) {
+        this.type = type;
+        this.active = true;
+        this.init();
+    }
+
+    init() {
+        const types = {
+            scout: {
+                width: 40,
+                height: 40,
+                health: 1,
+                score: 10,
+                color: '#f00',
+                speed: 3,
+                pattern: 'linear'
+            },
+            fighter: {
+                width: 50,
+                height: 50,
+                health: 3,
+                score: 30,
+                color: '#f60',
+                speed: 2,
+                pattern: 'sine'
+            },
+            bomber: {
+                width: 70,
+                height: 70,
+                health: 5,
+                score: 50,
+                color: '#f0f',
+                speed: 1.5,
+                pattern: 'zigzag'
+            },
+            boss: {
+                width: 150,
+                height: 150,
+                health: 50,
+                score: 500,
+                color: '#f00',
+                speed: 1,
+                pattern: 'complex'
+            }
+        };
+
+        const props = types[this.type];
+        Object.assign(this, props);
+        this.x = Math.random() * (canvas.width - this.width);
+        this.y = -this.height;
+        this.baseX = this.x;
+        this.time = 0;
+        this.maxHealth = this.health;
+    }
+
+    update() {
+        if (!this.active) return false;
+
+        this.time += 0.02;
+
+        switch(this.pattern) {
+            case 'linear':
+                this.y += this.speed;
+                break;
+            case 'sine':
+                this.y += this.speed;
+                this.x = this.baseX + Math.sin(this.time * 2) * 100;
                 break;
             case 'zigzag':
-                newX = centerX + Math.sin(time * 2) * 300;
+                this.y += this.speed;
+                this.x += Math.cos(this.time * 3) * 3;
                 break;
-            case 'chase':
-                const playerRect = player.getBoundingClientRect();
-                const bossRect = boss.getBoundingClientRect();
-                const dx = playerRect.left - bossRect.left;
-                newX = bossRect.left + (dx > 0 ? bossConfig.moveSpeed : -bossConfig.moveSpeed);
-                break;
-            case 'linear':
-                newX = centerX + Math.sin(time * 0.5) * 400;
+            case 'complex':
+                this.y += this.speed * 0.5;
+                this.x += Math.sin(this.time) * 2;
                 break;
         }
 
-        boss.style.left = `${newX}px`;
-        boss.style.top = `${newY}px`;
-    }, 16);
-}
+        // Стрельба
+        if (this.type !== 'scout' && Math.random() < 0.01) {
+            const bullet = {
+                x: this.x + this.width/2,
+                y: this.y + this.height,
+                speed: 5,
+                width: 4,
+                height: 10,
+                color: this.color,
+                damage: this.type === 'boss' ? 2 : 1
+            };
+            enemyProjectiles.push(bullet);
+        }
 
-// Создание случайного босса
-function createRandomBoss() {
-    const bossTypes = Object.keys(BOSS_TYPES);
-    const minLevel = Math.min(Math.floor(level / 3), bossTypes.length - 1);
-    const maxLevel = Math.min(Math.floor(level / 2), bossTypes.length - 1);
-    const bossType = bossTypes[Math.floor(Math.random() * (maxLevel - minLevel + 1)) + minLevel];
-    const bossConfig = BOSS_TYPES[bossType];
-
-    // Увеличиваем характеристики босса в зависимости от уровня
-    const scalingFactor = 1 + (level - 1) * 0.2; // Увеличение на 20% за уровень
-    
-    boss.style.backgroundColor = bossConfig.color;
-    bossHealth = bossConfig.health * scalingFactor;
-    
-    return {
-        ...bossConfig,
-        health: bossConfig.health * scalingFactor,
-        moveSpeed: bossConfig.moveSpeed * Math.min(scalingFactor, 2), // Ограничиваем максимальную скорость
-        fireRate: bossConfig.fireRate * Math.min(scalingFactor, 3) // Ограничиваем максимальную скорострельность
-    };
-}
-
-// Создание босса
-function createBoss() {
-    const bossConfig = createRandomBoss();
-    boss.style.display = 'block';
-    bossHealthContainer.style.display = 'block';
-    boss.style.top = '-200px';
-    
-    // Очищаем старые пушки
-    bossGuns.forEach(gun => gun.remove());
-    bossGuns = [];
-    
-    // Создаем новые пушки
-    for (let i = 0; i < bossConfig.guns; i++) {
-        const gun = document.createElement('div');
-        gun.className = 'boss-gun';
-        gun.style.position = 'absolute';
-        gun.style.width = '30px';
-        gun.style.height = '30px';
-        gun.style.background = '#ff0000';
-        gun.style.borderRadius = '50%';
-        gun.health = 100;
-        boss.appendChild(gun);
-        bossGuns.push(gun);
-        
-        // Располагаем пушки в зависимости от их количества
-        const angle = (i / bossConfig.guns) * Math.PI * 2;
-        gun.style.left = `${boss.offsetWidth/2 + Math.cos(angle) * 100 - 15}px`;
-        gun.style.bottom = `${boss.offsetHeight/2 + Math.sin(angle) * 50}px`;
+        return this.y < canvas.height;
     }
 
-    setTimeout(() => {
-        boss.style.top = '50px';
-        updateBossPosition(boss, bossConfig);
-    }, 100);
+    draw(ctx) {
+        if (!this.active) return;
 
-    // Стрельба из пушек
-    const shootInterval = setInterval(() => {
-        if (!boss.isConnected || isGameOver) {
-            clearInterval(shootInterval);
-            return;
+        ctx.save();
+        ctx.translate(this.x + this.width/2, this.y + this.height/2);
+
+        // Отрисовка в зависимости от типа
+        switch(this.type) {
+            case 'scout':
+                this.drawScout(ctx);
+                break;
+            case 'fighter':
+                this.drawFighter(ctx);
+                break;
+            case 'bomber':
+                this.drawBomber(ctx);
+                break;
+            case 'boss':
+                this.drawBoss(ctx);
+                break;
         }
 
-        bossGuns.forEach(gun => {
-            if (gun.health > 0 && Math.random() < bossConfig.fireRate) {
-                const gunRect = gun.getBoundingClientRect();
-                bossFire(gunRect.left + gun.offsetWidth/2, gunRect.bottom);
-            }
-        });
-    }, 1000);
-}
-
-// Атака босса
-function bossFire(x, y) {
-    const bullet = document.createElement('div');
-    bullet.className = 'missile enemy-bullet';
-    bullet.style.left = `${x - 3}px`;
-    bullet.style.top = `${y}px`;
-    gameContainer.appendChild(bullet);
-
-    const interval = setInterval(() => {
-        const currentTop = parseInt(bullet.style.top);
-        bullet.style.top = `${currentTop + 5}px`;
-
-        if (currentTop > gameContainer.offsetHeight) {
-            clearInterval(interval);
-            bullet.remove();
-        } else {
-            if (checkPlayerCollision(bullet)) {
-                clearInterval(interval);
-                bullet.remove();
-                createExplosion({ getBoundingClientRect: () => ({
-                    left: parseInt(bullet.style.left),
-                    top: parseInt(bullet.style.top)
-                })});
-            }
+        // Полоса здоровья для больших врагов
+        if (this.maxHealth > 1) {
+            const healthPercent = this.health / this.maxHealth;
+            const barWidth = this.width;
+            const barHeight = 5;
+            
+            ctx.fillStyle = '#333';
+            ctx.fillRect(-barWidth/2, -this.height/2 - 10, barWidth, barHeight);
+            ctx.fillStyle = this.color;
+            ctx.fillRect(-barWidth/2, -this.height/2 - 10, barWidth * healthPercent, barHeight);
         }
-    }, 16);
+
+        ctx.restore();
+    }
+
+    drawScout(ctx) {
+        ctx.fillStyle = this.color;
+        ctx.beginPath();
+        ctx.moveTo(0, this.height/2);
+        ctx.lineTo(this.width/2, -this.height/2);
+        ctx.lineTo(-this.width/2, -this.height/2);
+        ctx.closePath();
+        ctx.fill();
+    }
+
+    drawFighter(ctx) {
+        ctx.fillStyle = this.color;
+        ctx.beginPath();
+        ctx.moveTo(0, -this.height/2);
+        ctx.lineTo(-this.width/2, this.height/2);
+        ctx.lineTo(this.width/2, this.height/2);
+        ctx.closePath();
+        ctx.fill();
+
+        // Детали
+        ctx.fillStyle = '#fff';
+        ctx.beginPath();
+        ctx.arc(0, 0, 5, 0, Math.PI * 2);
+        ctx.fill();
+    }
+
+    drawBomber(ctx) {
+        // Основной корпус
+        ctx.fillStyle = this.color;
+        ctx.beginPath();
+        ctx.arc(0, 0, this.width/2, 0, Math.PI * 2);
+        ctx.fill();
+
+        // Детали
+        ctx.strokeStyle = '#fff';
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        ctx.arc(0, 0, this.width/3, 0, Math.PI * 2);
+        ctx.stroke();
+    }
+
+    drawBoss(ctx) {
+        // Основной корпус
+        ctx.fillStyle = this.color;
+        ctx.fillRect(-this.width/2, -this.height/2, this.width, this.height);
+
+        // Детали
+        ctx.fillStyle = '#ff0';
+        ctx.beginPath();
+        ctx.moveTo(-this.width/2, -this.height/2);
+        ctx.lineTo(0, 0);
+        ctx.lineTo(this.width/2, -this.height/2);
+        ctx.closePath();
+        ctx.fill();
+
+        // Свечение
+        ctx.shadowColor = this.color;
+        ctx.shadowBlur = 20;
+        ctx.fill();
+    }
+
+    hit(damage) {
+        this.health -= damage;
+        if (this.health <= 0) {
+            this.active = false;
+            return true;
+        }
+        return false;
+    }
 }
 
-// Босс уничтожен
-function bossDefeated() {
-    createExplosion(boss);
-    boss.style.display = 'none';
-    bossHealthContainer.style.display = 'none';
-    bossActive = false;
-    score += 1000 * level;
-    scoreElement.textContent = `SCORE: ${score}`;
-    
-    // Сбрасываем счетчик убийств для следующего босса
-    kills = 0;
-    
-    // Переход на следующий уровень
-    nextLevel();
-}
+// Игровое состояние
+let gameState = {
+    score: 0,
+    level: 1,
+    lives: 3,
+    missiles: 5,
+    isGameOver: false,
+    isPaused: false
+};
 
-// Проверка попаданий
-function checkHits(projectile) {
-    const projectileRect = projectile.getBoundingClientRect();
-    
+// Игровые объекты
+let player = new Player();
+let projectiles = [];
+let enemies = [];
+let enemyProjectiles = [];
+let particles = new ParticleSystem();
+let starField = new StarField();
+
+// Обработка мыши
+const mouse = {
+    x: undefined,
+    y: undefined,
+    left: false,
+    right: false
+};
+
+canvas.addEventListener('mousemove', (e) => {
+    const rect = canvas.getBoundingClientRect();
+    mouse.x = e.clientX - rect.left;
+    mouse.y = e.clientY - rect.top;
+});
+
+canvas.addEventListener('mousedown', (e) => {
+    e.preventDefault();
+    if (e.button === 0) mouse.left = true;
+    if (e.button === 2) mouse.right = true;
+});
+
+canvas.addEventListener('mouseup', (e) => {
+    if (e.button === 0) mouse.left = false;
+    if (e.button === 2) mouse.right = false;
+});
+
+canvas.addEventListener('contextmenu', (e) => {
+    e.preventDefault();
+});
+
+// Функция поиска ближайшего врага
+function findNearestEnemy(x, y) {
+    let nearest = null;
+    let minDist = Infinity;
+
     for (const enemy of enemies) {
-        if (enemy.isConnected) {
-            const enemyRect = enemy.getBoundingClientRect();
-            if (isCollision(projectileRect, enemyRect)) {
-                enemyHit(enemy);
-                return true;
-            }
+        if (!enemy.active) continue;
+        const dx = enemy.x + enemy.width/2 - x;
+        const dy = enemy.y + enemy.height/2 - y;
+        const dist = dx * dx + dy * dy;
+        
+        if (dist < minDist) {
+            minDist = dist;
+            nearest = enemy;
         }
     }
-// Обновляем функцию enemyHit
-function enemyHit(enemy) {
-    playSound('hitSound');
-    
-    // Уменьшаем здоровье врага
-    if (enemy.health > 1) {
-        enemy.health--;
-        enemy.style.backgroundColor = enemy.health === 1 ? '#ff0000' : '#ff6600';
-        createExplosion(enemy, 'small');
-        return;
-    }
-    
-    playSound('explosionSound');
-    score += 100 * level; // Увеличиваем награду за убийство с уровнем
-    kills++;
-    scoreElement.textContent = `SCORE: ${score}`;
-    createExplosion(enemy);
-    enemy.remove();
 
-    missiles = Math.min(missiles + 1, MAX_MISSILES);
-    missilesElement.textContent = `MISSILES: ${missiles}`;
-
-    if (kills >= KILLS_FOR_BOSS && !bossActive) {
-        bossActive = true;
-        createBoss();
-    }
+    return nearest;
 }
-    for (const meteor of meteors) {
-        if (meteor.isConnected) {
-            const meteorRect = meteor.getBoundingClientRect();
-            if (isCollision(projectileRect, meteorRect)) {
-                meteorHit(meteor);
-                return true;
-            }
-        }
+
+// Основной игровой цикл
+function gameLoop() {
+    if (!gameState.isPaused && !gameState.isGameOver) {
+        update();
+    }
+    draw();
+    requestAnimationFrame(gameLoop);
+}
+  // Функция обновления состояния игры
+function update() {
+    // Обновление звёздного фона
+    starField.update();
+
+    // Обновление игрока
+    player.update();
+
+    // Стрельба игрока
+    if (mouse.left) {
+        player.fire();
     }
 
-    if (bossActive) {
-        for (const gun of bossGuns) {
-            if (gun.health > 0) {
-                const gunRect = gun.getBoundingClientRect();
-                if (isCollision(projectileRect, gunRect)) {
-                    gunHit(gun);
-                    return true;
+    // Обновление снарядов
+    projectiles = projectiles.filter(projectile => projectile.update());
+
+    // Обновление вражеских снарядов
+    enemyProjectiles = enemyProjectiles.filter(bullet => {
+        bullet.y += bullet.speed;
+        
+        // Проверка попадания во игрока
+        if (!gameState.isGameOver && checkCollision(bullet, player)) {
+            if (player.shield > 0) {
+                particles.createExplosion(bullet.x, bullet.y, '#0ff', 10);
+                return false;
+            }
+            gameState.lives--;
+            particles.createExplosion(player.x + player.width/2, player.y + player.height/2, '#f00', 20);
+            if (gameState.lives <= 0) {
+                gameState.isGameOver = true;
+                document.getElementById('gameOver').style.display = 'block';
+            }
+            updateUI();
+            return false;
+        }
+        
+        return bullet.y < canvas.height;
+    });
+
+    // Обновление врагов и создание новых
+    if (Math.random() < GAME_CONFIG.ENEMY_SPAWN_RATE) {
+        const types = ['scout', 'fighter', 'bomber'];
+        const type = types[Math.floor(Math.random() * types.length)];
+        enemies.push(new Enemy(type));
+    }
+
+    // Создание босса
+    if (gameState.score > 0 && gameState.score % 1000 === 0 && !enemies.some(e => e.type === 'boss')) {
+        enemies.push(new Enemy('boss'));
+    }
+
+    // Обновление врагов
+    enemies = enemies.filter(enemy => {
+        if (!enemy.active) return false;
+        
+        if (!enemy.update()) return false;
+
+        // Проверка столкновений с снарядами игрока
+        for (let i = projectiles.length - 1; i >= 0; i--) {
+            const projectile = projectiles[i];
+            if (checkCollision(projectile, enemy)) {
+                if (enemy.hit(projectile.damage)) {
+                    gameState.score += enemy.score;
+                    particles.createExplosion(
+                        enemy.x + enemy.width/2,
+                        enemy.y + enemy.height/2,
+                        enemy.color,
+                        30
+                    );
+
+                    // Шанс выпадения бонуса
+                    if (Math.random() < GAME_CONFIG.POWER_UP_CHANCE) {
+                        gameState.missiles++;
+                        updateUI();
+                    }
+
+                    projectiles.splice(i, 1);
+                    return false;
                 }
+                particles.createExplosion(projectile.x, projectile.y, projectile.color, 5);
+                projectiles.splice(i, 1);
             }
         }
-    }
 
-    return false;
-}
-
-// Уничтожение врага
-function enemyHit(enemy) {
-    playSound('explosionSound');
-    score += 100;
-    kills++;
-    scoreElement.textContent = `SCORE: ${score}`;
-    createExplosion(enemy);
-    enemy.remove();
-
-    missiles = Math.min(missiles + 1, MAX_MISSILES);
-    missilesElement.textContent = `MISSILES: ${missiles}`;
-
-    if (kills >= KILLS_FOR_BOSS && !bossActive) {
-        bossActive = true;
-        createBoss();
-    }
-}
-
-// Попадание в пушку босса
-function gunHit(gun) {
-    playSound('hitSound');
-    gun.health -= 20;
-    gun.style.opacity = gun.health / 100;
-    
-    if (gun.health <= 0) {
-        createExplosion(gun);
-        gun.style.display = 'none';
-        
-        // Проверяем, остались ли активные пушки
-        if (!bossGuns.some(g => g.health > 0)) {
-            bossDefeated();
+        // Проверка столкновения с игроком
+        if (!gameState.isGameOver && checkCollision(enemy, player)) {
+            if (player.shield <= 0) {
+                gameState.lives--;
+                particles.createExplosion(
+                    player.x + player.width/2,
+                    player.y + player.height/2,
+                    '#f00',
+                    20
+                );
+                
+                if (gameState.lives <= 0) {
+                    gameState.isGameOver = true;
+                    document.getElementById('gameOver').style.display = 'block';
+                }
+                updateUI();
+                return false;
+            }
         }
-    }
-}
 
-// Следующий уровень
-function nextLevel() {
-    level++;
-    levelElement.textContent = `LEVEL: ${level}`;
-    playSound('levelUpSound');
-    
-    // Увеличиваем сложность
-    ENEMY_SPEED *= 1.2;
-    METEOR_SPEED *= 1.2;
-    ENEMY_WANDER_SPEED *= 1.2;
-    ENEMY_FIRE_RATE = Math.max(ENEMY_FIRE_RATE * 0.8, 500);
-    
-    // Очищаем врагов и метеориты
-    enemies.forEach(enemy => enemy.remove());
-    meteors.forEach(meteor => meteor.remove());
-    enemies = [];
-    meteors = [];
-    
-    // Создаем и показываем сообщение о новом уровне
-    const levelMessage = document.createElement('div');
-    levelMessage.className = 'level-message';
-    levelMessage.style.position = 'absolute';
-    levelMessage.style.left = '50%';
-    levelMessage.style.top = '50%';
-    levelMessage.style.transform = 'translate(-50%, -50%)';
-    levelMessage.style.fontSize = '48px';
-    levelMessage.style.color = '#fff';
-    levelMessage.style.textShadow = '0 0 10px #00ff00';
-    levelMessage.style.zIndex = '1000';
-    levelMessage.textContent = `Level ${level}`;
-    gameContainer.appendChild(levelMessage);
-    
-    // Удаляем сообщение и запускаем новый уровень через 3 секунды
-    setTimeout(() => {
-        levelMessage.remove();
-        spawnEnemies();
-        spawnMeteors();
-    }, 3000);
-}
-
-// Проверка столкновений с игроком
-function checkPlayerCollision(projectile) {
-    const projectileRect = projectile.getBoundingClientRect();
-    const playerRect = player.getBoundingClientRect();
-
-    if (isCollision(projectileRect, playerRect)) {
-        playerHit();
         return true;
-    }
-    return false;
+    });
+
+    // Обновление системы частиц
+    particles.update();
 }
 
-// Игрок получил урон
-function playerHit(damage = 10) {
-    playSound('hitSound');
-    playerHealth -= damage;
-    updatePlayerHealth();
+// Функция отрисовки
+function draw() {
+    // Очистка канваса
+    ctx.fillStyle = 'black';
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-    if (playerHealth <= 0) {
-        lives--;
-        livesElement.textContent = `LIVES: ${lives}`;
-        if (lives <= 0) {
-            gameOver();
-        } else {
-            playerHealth = PLAYER_HEALTH;
-            updatePlayerHealth();
+    // Отрисовка звёздного фона
+    starField.draw(ctx);
+
+    // Отрисовка игрока
+    player.draw(ctx);
+
+    // Отрисовка снарядов
+    projectiles.forEach(projectile => projectile.draw(ctx));
+
+    // Отрисовка вражеских снарядов
+    enemyProjectiles.forEach(bullet => {
+        ctx.fillStyle = bullet.color;
+        ctx.fillRect(bullet.x - bullet.width/2, bullet.y, bullet.width, bullet.height);
+    });
+
+    // Отрисовка врагов
+    enemies.forEach(enemy => enemy.draw(ctx));
+
+    // Отрисовка эффектов
+    particles.draw(ctx);
+}
+
+// Функция проверки столкновений
+function checkCollision(rect1, rect2) {
+    return rect1.x < rect2.x + rect2.width &&
+           rect1.x + rect1.width > rect2.x &&
+           rect1.y < rect2.y + rect2.height &&
+           rect1.y + rect1.height > rect2.y;
+}
+
+// Обновление интерфейса
+function updateUI() {
+    document.getElementById('score').textContent = `Очки: ${gameState.score}`;
+    document.getElementById('level').textContent = `Уровень: ${gameState.level}`;
+    document.getElementById('lives').textContent = `Жизни: ${gameState.lives} | HP: ${Math.ceil(player.health)}`;
+    document.getElementById('missiles').textContent = `Ракеты: ${gameState.missiles}`;
+}
+// Обновление вражеских снарядов
+    enemyProjectiles = enemyProjectiles.filter(bullet => {
+        bullet.y += bullet.speed;
+        
+        // Проверка попадания во игрока
+        if (!gameState.isGameOver && checkCollision(bullet, player)) {
+            if (player.shield > 0) {
+                particles.createExplosion(bullet.x, bullet.y, '#0ff', 10);
+                return false;
+            }
+            
+            if (player.takeDamage(bullet.damage)) {
+                gameState.lives--;
+                particles.createExplosion(player.x + player.width/2, player.y + player.height/2, '#f00', 20);
+                
+                if (gameState.lives <= 0) {
+                    gameState.isGameOver = true;
+                    document.getElementById('gameOver').style.display = 'block';
+                } else {
+                    // Восстанавливаем здоровье при потере жизни
+                    player.health = player.maxHealth;
+                }
+                updateUI();
+            }
+            return false;
         }
-    }
-}
-
-// Обновление здоровья игрока
-function updatePlayerHealth() {
-    playerHealthBar.style.width = `${(playerHealth / PLAYER_HEALTH) * 100}%`;
-}
-
-// Проверка столкновений
-function isCollision(rect1, rect2) {
-    return !(rect1.right < rect2.left || 
-            rect1.left > rect2.right || 
-            rect1.bottom < rect2.top || 
-            rect1.top > rect2.bottom);
-}
-
-// Создание взрыва
-function createExplosion(element) {
-    const rect = element.getBoundingClientRect();
-    const explosion = document.createElement('div');
-    explosion.className = 'explosion';
-    explosion.style.left = `${rect.left}px`;
-    explosion.style.top = `${rect.top}px`;
-    gameContainer.appendChild(explosion);
-    
-    createParticles(rect);
-    
-    setTimeout(() => explosion.remove(), 500);
-}
-
-// Обновляем функцию создания частиц
-function createParticles(rect, size = 'normal') {
-    const particleCount = size === 'small' ? 10 : 20;
-    const particleSize = size === 'small' ? 2 : 4;
-    
-    for (let i = 0; i < particleCount; i++) {
-        const particle = document.createElement('div');
-        particle.className = 'particle';
-        particle.style.width = `${particleSize}px`;
-        particle.style.height = `${particleSize}px`;
-        particle.style.left = `${rect.left + rect.width/2}px`;
-        particle.style.top = `${rect.top + rect.height/2}px`;
         
-        const angle = Math.random() * Math.PI * 2;
-        const speed = Math.random() * 5 + 2;
-        const vx = Math.cos(angle) * speed;
-        const vy = Math.sin(angle) * speed;
-        
-        particle.style.transform = `translate(${vx * 20}px, ${vy * 20}px)`;
-        gameContainer.appendChild(particle);
-        
-        setTimeout(() => particle.remove(), 1000);
-    }
-}
-// Обновляем функцию enemyHit для отслеживания прогресса до босса
-function enemyHit(enemy) {
-    playSound('explosionSound');
-    score += 100;
-    kills++;
-    scoreElement.textContent = `SCORE: ${score}`;
-    createExplosion(enemy);
-    enemy.remove();
+        return bullet.y < canvas.height;
+    });
 
-    missiles = Math.min(missiles + 1, MAX_MISSILES);
-    missilesElement.textContent = `MISSILES: ${missiles}`;
-
-    // Проверяем достижение необходимого количества убийств для босса
-    if (kills >= KILLS_FOR_BOSS && !bossActive) {
-        bossActive = true;
-        createBoss();
+    // Добавляем логику появления босса уровня
+    if (!gameState.bossSpawned && gameState.score >= GAME_CONFIG.BOSS_SCORE_THRESHOLD) {
+        gameState.bossSpawned = true;
+        const boss = new Enemy('boss');
+        boss.health = GAME_CONFIG.LEVEL_BOSS_HEALTH;
+        boss.onDefeat = () => {
+            gameState.level++;
+            gameState.bossSpawned = false;
+            gameState.score += 500;
+            GAME_CONFIG.ENEMY_SPAWN_RATE *= 1.2; // Увеличиваем сложность
+            GAME_CONFIG.LEVEL_BOSS_HEALTH += 10; // Увеличиваем здоровье босса следующего уровня
+            updateUI();
+        };
+        enemies.push(boss);
     }
-}
-// Конец игры
-function gameOver() {
-    isGameOver = true;
-    restartButton.style.display = 'block';
-}
-// Добавим новую функцию для создания маленького взрыва
-function createExplosion(element, size = 'normal') {
-    const rect = element.getBoundingClientRect();
-    const explosion = document.createElement('div');
-    explosion.className = 'explosion';
-    if (size === 'small') {
-        explosion.style.transform = 'scale(0.5)';
-    }
-    explosion.style.left = `${rect.left}px`;
-    explosion.style.top = `${rect.top}px`;
-    gameContainer.appendChild(explosion);
+// Инициализация игры
+function initGame() {
+    gameState = {
+        score: 0,
+        level: 1,
+        lives: 3,
+        missiles: 5,
+        isGameOver: false,
+        isPaused: false,
+        bossSpawned: false
+    };
     
-    createParticles(rect, size);
-    
-    setTimeout(() => explosion.remove(), 500);
-}
-// Рестарт игры
-function restartGame() {
-    // Сбрасываем все переменные к начальным значениям
-    score = 0;
-    lives = 3;
-    missiles = MAX_MISSILES;
-    isGameOver = false;
-    bossActive = false;
-    bossHealth = 500;
-    playerHealth = PLAYER_HEALTH;
-    kills = 0;
-    level = 1;
-    
-    // Обновляем отображение
-    scoreElement.textContent = `SCORE: ${score}`;
-    livesElement.textContent = `LIVES: ${lives}`;
-    missilesElement.textContent = `MISSILES: ${missiles}`;
-    levelElement.textContent = `LEVEL: ${level}`;
-    updatePlayerHealth();
-    
-    // Очищаем игровое поле
-    enemies.forEach(enemy => enemy.remove());
-    meteors.forEach(meteor => meteor.remove());
+    player = new Player();
+    projectiles = [];
     enemies = [];
-    meteors = [];
-    bossGuns.forEach(gun => gun.remove());
-    bossGuns = [];
-    
-    // Скрываем босса и его здоровье
-    boss.style.display = 'none';
-    bossHealthContainer.style.display = 'none';
-    
-    // Скрываем кнопку рестарта
-    restartButton.style.display = 'none';
-    
-    // Запускаем игру заново
-    spawnEnemies();
-    spawnMeteors();
+    enemyProjectiles = [];
+    particles = new ParticleSystem();
+    starField = new StarField();
+
+    document.getElementById('gameOver').style.display = 'none';
+    updateUI();
 }
 
-// Обновляем обработчик кнопки рестарта
-restartButton.addEventListener('click', () => {
-    restartGame();
+// Обработчики событий
+window.addEventListener('keydown', (e) => {
+    if (e.code === 'Space' && gameState.isGameOver) {
+        initGame();
+    }
+    if (e.code === 'KeyP') {
+        gameState.isPaused = !gameState.isPaused;
+    }
+});
+
+// Обработчики выбора оружия
+document.querySelectorAll('.weapon').forEach(weapon => {
+    weapon.addEventListener('click', () => {
+        const weaponType = weapon.dataset.weapon;
+        player.currentWeapon = weaponType;
+        document.querySelectorAll('.weapon').forEach(w => w.classList.remove('active'));
+        weapon.classList.add('active');
+    });
 });
 
 // Запуск игры
 initGame();
-    </script>
+gameLoop();
+</script>
 </body>
-</html>
+</html> 
